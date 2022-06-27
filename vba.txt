@@ -1,0 +1,97 @@
+Sub PlanKroczacyRefresh()
+
+
+Dim vDate As Date
+Dim wbMe As Workbook
+Dim ws As Worksheet
+Dim data_wb As Workbook
+Dim inputbx As String
+Dim loc As Range, lc As Long
+Dim MyFolder As String, ThisMonth As String
+Dim MyFile As String
+
+'Zmieniamy nag³ówek na short date w pliku z makrem'
+
+Set wbMe = ActiveWorkbook
+With wbMe.Sheets("input_forecast").Rows("1:1")
+    .Copy
+    .PasteSpecial Paste:=xlPasteValues
+    .NumberFormat = "YYYY-MM-DD"
+  End With
+  
+'Otwieramy plik automatycznie ze wskazanego folderu'
+  
+
+strPath = selectFile
+If strPath = "" Then Exit Sub
+Set data_wb = Workbooks.Open(strPath, False, True)
+
+'Usuwamy alerty o akutliazacji itp'
+Application.ThisWorkbook.UpdateLinks = xlUpdateLinksNever '2
+Application.DisplayAlerts = False
+Application.ScreenUpdating = False
+Application.AskToUpdateLinks = False
+
+'Zmieniamy nag³ówek na short date w pliku z planem krocz¹cym'
+
+With data_wb.Sheets("Adekwatnosc").Rows("1:1")
+   .Value = .Value
+   .NumberFormat = "YYYY-MM-DD"
+End With
+'input box - wpisujemy date zgodnie z podanym formatem'
+ Do
+        inputbx = InputBox("Enter Date, FORMAT; YYYY-MM-DD", Format(VBA.Now, "YYYY-MM-DD"))
+        If inputbx = vbNullString Then Exit Sub
+        On Error Resume Next
+        vDate = DateValue(inputbx)
+        On Error GoTo 0
+        DateIsValid = IsDate(vDate)
+        If Not DateIsValid Then MsgBox "Please enter a valid date.", vbExclamation
+    Loop Until DateIsValid
+       
+' Wyszukujemy find daty w nag³ówku -> kopiujemy -> wklejamy je do pliku z makrem we wskazane w makrze miejscu'
+     
+
+     With data_wb.Sheets("Adekwatnosc")
+        Set loc = .Cells.Find(what:=vDate)
+      If Not loc Is Nothing Then
+            lc = .Cells(loc.Row, Columns.Count).End(xlToLeft).Column
+            .Range(.Cells(109, loc.Column), .Cells(123, lc)).Copy
+      Set locPaste = wbMe.Sheets("input_forecast").Cells.Find(what:=vDate)
+      wbMe.Sheets("input_forecast").Cells(27, locPaste.Column).PasteSpecial Paste:=xlPasteValues
+      Application.CutCopyMode = False
+      
+      lc1 = .Cells(loc.Row, Columns.Count).End(xlToLeft).Column
+            .Range(.Cells(138, loc.Column), .Cells(138, lc1)).Copy
+      Set locPaste = wbMe.Sheets("input_forecast").Cells.Find(what:=vDate)
+      wbMe.Sheets("input_forecast").Cells(21, locPaste.Column).PasteSpecial Paste:=xlPasteValues
+      Application.CutCopyMode = False
+      
+      
+        End If
+    End With
+'Zamykamy plik bez zapisywania'
+data_wb.Close SaveChanges:=False
+
+Beep
+MsgBox "Wklejone!"
+End Sub
+
+
+Private Function selectFile()
+Dim fd As Office.FileDialog
+
+Set fd = Application.FileDialog(msoFileDialogFilePicker)
+
+With fd
+.InitialFileName = ActiveWorkbook.Path
+.AllowMultiSelect = False
+.Filters.Clear
+.Filters.Add "Excel", "*.xlsm"
+
+If .Show = True Then selectFile = .SelectedItems(1)
+
+End With
+
+
+End Function
