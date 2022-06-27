@@ -1,0 +1,37 @@
+import pandas as pd
+import numpy as np
+
+import tweets_to_df as ttdf
+import pickle
+import time
+
+twitter_accounts_df = pd.read_csv('Twitter_names.csv')
+twitter_accounts_df.shape
+twitter_accounts_df.head()
+
+twitter_accounts_list = twitter_accounts_df['twitter_name'].to_list()
+len(twitter_accounts_list)
+index_list = [x*79+1 for x in range(round(len(twitter_accounts_list)/79))]
+
+def get_80_accounts_to_pickle(index):
+    
+    final_df = ttdf.tweets_to_csv(twitter_accounts_list[index])
+    twitter_accounts_list_reduced = twitter_accounts_list[index+1:index+79]
+    len(twitter_accounts_list_reduced)
+    
+    for twitter_account in twitter_accounts_list_reduced:
+    
+        df = pd.DataFrame()
+        try:
+            df = ttdf.tweets_to_csv(twitter_account)
+        except:
+            print('Something went wrong')
+        if df.empty == False :
+            final_df = pd.concat([final_df, df], ignore_index=True)
+
+    final_df.drop_duplicates(keep=False,inplace=True)
+    final_df.to_pickle(f'{index}_{index+79}.pkl')
+    
+    for index in index_list[37:]:
+    get_80_accounts_to_pickle(index)
+    time.sleep(450)

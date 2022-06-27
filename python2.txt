@@ -1,0 +1,16 @@
+#library#
+import csv
+import pandas as pd
+import requests
+from bs4 import BeautifulSoup
+#suopscrap#
+page = requests.get("https://www.morele.net/pralka-candy-cs4-1062d3-950636/?sekcja=reviews-all")
+
+soup = BeautifulSoup(page.content, "html.parser",) 
+#dataloop#
+data = [{"text":ri.find("div", {"class":"rev-desc"}).getText(strip=True) ,
+        "stars":ri.find("div", {"class":"rev-stars"}).getText(strip=True)}
+ for ri in soup.find_all("div", {"class":"reviews-item"})]
+#dfandtosc#
+morele = pd.DataFrame(data)
+morele.to_csv(r'C:/Users/admin/Desktop/Twee44444ts.csv')
